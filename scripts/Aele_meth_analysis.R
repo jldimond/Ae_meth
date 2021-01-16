@@ -47,7 +47,8 @@ cpg_cov <- All_data[,3]/All_data[,5]
 #bind cpg_cov to dataframe
 All_data <- cbind(All_data, cpg_cov)
 
-#now set threshold of 20% CpG coverage to data
+#now set threshold of 20% CpG coverage to data. This ensures that there is a reasonable amount
+#of nanopore data for each transcriptome contig.
 All_data_thresh <- All_data[All_data[,7] >= 0.2,]
 
 #now set threshold of 2 for CpG O/E 
@@ -60,7 +61,6 @@ plot(All_data_thresh[,2], All_data_thresh[,6])
 model <- lm(All_data_thresh[,2] ~ All_data_thresh[,6])
 abline(model, col = "green")
 
-
 #compare fully methylated to fully unmethylated
 
 CpGOE_0 <- as.numeric(All_data_thresh$CpG_OE[All_data_thresh[,2] == 0])
@@ -72,10 +72,9 @@ CpG_01 <- as.data.frame(rbind(CpGOE_1, CpGOE_0))
 CpG_01[,1] <- as.numeric(as.character(CpG_01[,1]))
 CpG_01$V2 = factor(CpG_01$V2,c("Fully unmethylated","Fully methylated"))
 
-# load ggpolot and ggpubr packages
+#plotting
 
 library(ggplot2)
-library(ggpubr)
 
 # Scatter plot using ggplot and ggpubr, plus boxplot
 sp <- ggscatter(All_data_thresh, x = "methylated_frequency", y = "CpG_OE",
@@ -85,12 +84,10 @@ sp <- ggscatter(All_data_thresh, x = "methylated_frequency", y = "CpG_OE",
                 cor.coeff.args = list(method = "pearson", 
                                       label.x.npc = "center", label.y.npc = "top"),
                 ylab = "CpG O/E", xlab = "Methylated frequency")+
-  annotate(geom="text", x=0, y=2, label="A") +
   border()                                         
 #Violinplot of fully meth and umeth by CpG O/E
 viol <- ggplot(CpG_01, aes(x=V2, y=CpGOE_1),xlab = "", ylab = "CpG O/E", show.legend = FALSE) + 
   geom_violin(aes(fill = V2)) +
-  annotate(geom="text", x=0.5, y=2, label="B") +
   scale_fill_manual(values=c("#b2abd2", "#542788")) +
   labs(x="", y = "CpG O/E")+
   theme_bw() +
@@ -101,8 +98,7 @@ viol <- ggplot(CpG_01, aes(x=V2, y=CpGOE_1),xlab = "", ylab = "CpG O/E", show.le
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   theme(panel.border = element_rect(size = 1)) 
 
-# Arranging the plots
-ggarrange(sp, viol, 
-          ncol = 2, nrow = 1,  align = "hv", 
-          widths = c(2, 2), heights = c(2, 2),
-          common.legend = FALSE)
+# Plot both
+library(cowplot)
+plot_grid(sp, viol, labels=c("A", "B"), ncol = 2, nrow = 1)
+

@@ -1,14 +1,14 @@
-setwd("~/Documents/Projects/Anthopleura/Methylation-splicing/Alt-splicing/analyses/") 
+setwd("~/Documents/Projects/Anthopleura/Methylation-splicing/Ae_meth/analyses/")
 
 library(GenomicRanges)
 library(rtracklayer)
 library(ggplot2)
 
 #import methylation files produced by nanopolish with threshold of 3 CpG counts per locus
-lst <- list.files(path="~/Documents/Projects/Anthopleura/Methylation-splicing/Alt-splicing/analyses/", 
+lst <- list.files(path="~/Documents/Projects/Anthopleura/Methylation-splicing/Ae_meth/analyses/", 
                   pattern = "thresh.tsv", full.names=TRUE)
 filelist <- lapply(lst, read.table)
-names(filelist) <- list.files(path="~/Documents/Projects/Anthopleura/Methylation-splicing/Alt-splicing/analyses/", 
+names(filelist) <- list.files(path="~/Documents/Projects/Anthopleura/Methylation-splicing/Ae_meth/analyses/", 
                               pattern = "thresh.tsv", full.names=FALSE)
 
 #merge/join dataframes in list according to first three columns (contig, start, end)
@@ -52,12 +52,20 @@ limits <- aes(ymax = summary_meth$V2 + summary_meth$V3,
               ymin = summary_meth$V2 - summary_meth$V3)
 
 p <- ggplot(data = summary_meth, aes(x = V1, y = V2, fill = V1)) +
-  geom_bar(stat = "identity", position = dodge, fill = c("#92c5de", "#f4a582")) +
+  geom_bar(stat = "identity", position = dodge, fill = c("#fdb863", "#b2abd2")) +
   geom_errorbar(limits, position = dodge, width = 0.25) +
-  theme_classic() +
+  scale_y_continuous(limits = c(0, NA),
+                     expand = expansion(mult = c(0, 0.1)))+
+  theme_bw() +
   labs(x="",y="Methylation frequency") +
-  theme(text = element_text(size = 20)) +
-  scale_y_continuous(expand = c(0, 0), limits = c(0, 0.065))
+  theme(legend.position = "none")  +
+  theme(axis.text = element_text(size = 12, color = "black")) +
+  theme(axis.title = element_text(size = 12, color = "black")) +
+  theme(axis.ticks = element_line(color = "black")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme(panel.border = element_rect(size = 1)) 
+  theme(text = element_text(size = 20)) 
+
 
 #Overall variance homogeneity test and ttest
 var.test(meth_means[1:3], meth_means[4:6])
@@ -80,37 +88,24 @@ indx3 <- row.names(rowSums(perfect) == 0)
 methcols3 <- meth_cols2[!seq_len(nrow(meth_cols2)) %in% indx2, ]
 
 #perform ttest on all rows
-methcols3$stat <- sapply(1:nrow(methcols3), function(i) t.test((methcols3[i,c(2,6,4)]), ##note values changed
-                                                               (methcols3[i,c(3,5,1)]))["p.value"])
+methcols3$stat <- sapply(1:nrow(methcols3), function(i) t.test((methcols3[i,c(1,2,3)]), ##note values changed
+                                                               (methcols3[i,c(4,5,6)]))["p.value"])
 
 methcols3$stat <- as.numeric(methcols3$stat)
 
-#apply Cohen's d statistic for effect size
+#FDR (Benjamini-Hochberg) correction of P-values
+methcols3$padjust <- p.adjust(methcols3$stat, method = "BH", n = length(methcols3$stat))
 
-library(effsize)
-
-apo <- as.data.frame(t(methcols3[,c(2,6,4)]))
-sym <- as.data.frame(t(methcols3[,c(3,5,1)]))
-
-cohendresults <- mapply(function(x, y) cohen.d(x,y)$estimate, apo, sym)
-
-methcols3$cohen <- cohendresults
-
-#calculate mean difference
-
-methcols3$apomean <- rowMeans(subset(methcols3, select = c(meth_freq_bar3, meth_freq_bar6, meth_freq_bar2)), na.rm = TRUE)
-methcols3$symmean <- rowMeans(subset(methcols3, select = c(meth_freq_bar5, meth_freq_bar4, meth_freq_bar1)), na.rm = TRUE)
-methcols3$absdiff <- abs(methcols3$apomean-methcols3$symmean)
-
-#select observations with p <0.05, effect size > 4, and mean difference > 0.4
-
-sigmeth <- subset(methcols3, (cohen > abs(4) & absdiff > 0.4))#stat < 0.05 & cohen > abs(5) & 
-
-#get row indices for these from main dataset, plus "perfect data" and extract from main
-
-sigmethindx <- c(row.names(sigmeth), "4249", "11202", "11203", "19933", "66251", "164020")
+#number of p values <0.05
+sigp <- sum(methcols3$padjust <= 0.05)
+  
+#no values less than 0.05. But, get "perfect data"...
+sigmethindx <- c("4249", "11202", "11203", "19933", "66251", "164020")
 
 sig_meth_data <- mergedData2[sigmethindx,]
+
+#**ctg1212:11000-25000, AIPGENE15872	Swiss-Prot	sp|Q61493|DPOLZ_MOUSE, DNA polymerase zeta catalytic subunit-like [Exaiptasia pallida], 4e-06, 54.9% ident, 
+#DNA polymerase zeta catalytic subunit-like isoform [Acropora millepora], 5e-138, 71.43% ident 
 
 #PCA
 pca <- prcomp(meth_cols, scale=T)
@@ -118,17 +113,25 @@ scores <- data.frame(pca$rotation)
 scores2 <- cbind(c("Apo", "Apo", "Apo", "Sym", "Sym", "Sym"), scores)
 colnames(scores2)[1] <- "SymState"
 
+#component loadings
 (pca$sdev)^2 / sum(pca$sdev^2) 
 # Or cumulative 
 cumsum((pca$sdev)^2) / sum(pca$sdev^2) 
 
 pcaplot <- ggplot(scores2, aes(PC1, PC2, colour = SymState)) + 
+  theme_bw() +
   geom_point(size = 5) +
-  scale_colour_manual(values = c("#92c5de", "#f4a582")) +
-  theme(legend.title=element_blank()) +
-  theme(text = element_text(size = 20)) +
-  labs(x = "PC1 62.2%", y = "PC2 9.4%") +
-  theme(legend.position = c(0.8, 0.9)) 
+  scale_colour_manual(values = c("#fdb863", "#b2abd2")) +
+  xlab("PC1 62.2%") +
+  ylab("PC2 9.4%")+
+  theme(legend.position="none") +
+  theme(axis.text = element_text(size = 12, color = "black")) +
+  theme(axis.title = element_text(size = 12, color = "black")) +
+  theme(axis.ticks = element_line(color = "black")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme(panel.border = element_rect(size = 1)) 
+  theme(text = element_text(size = 20)) 
+  
 pcaplot
 
 #plot barplot and PCA together
