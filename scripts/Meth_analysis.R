@@ -52,7 +52,7 @@ limits <- aes(ymax = summary_meth$V2 + summary_meth$V3,
               ymin = summary_meth$V2 - summary_meth$V3)
 
 p <- ggplot(data = summary_meth, aes(x = V1, y = V2, fill = V1)) +
-  geom_bar(stat = "identity", position = dodge, fill = c("#fdb863", "#b2abd2")) +
+  geom_bar(stat = "identity", position = dodge, fill = c("#DE77AE", "#7FBC41")) +
   geom_errorbar(limits, position = dodge, width = 0.25) +
   scale_y_continuous(limits = c(0, NA),
                      expand = expansion(mult = c(0, 0.1)))+
@@ -121,7 +121,7 @@ cumsum((pca$sdev)^2) / sum(pca$sdev^2)
 pcaplot <- ggplot(scores2, aes(PC1, PC2, colour = SymState)) + 
   theme_bw() +
   geom_point(size = 5) +
-  scale_colour_manual(values = c("#fdb863", "#b2abd2")) +
+  scale_colour_manual(values = c("#DE77AE", "#7FBC41")) +
   xlab("PC1 62.2%") +
   ylab("PC2 9.4%")+
   theme(legend.position="none") +
