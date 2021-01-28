@@ -1,3 +1,6 @@
+#This script analyzes nanopore methylation data from nanopolish in relation to
+#symbiosis
+
 setwd("~/Documents/Projects/Anthopleura/Methylation-splicing/Ae_meth/analyses/")
 
 library(ggplot2)
@@ -31,11 +34,15 @@ meth_means2 <- as.data.frame(cbind(meth_means, c("Aposymbiotic", "Aposymbiotic",
            "Symbiotic", "Symbiotic")))
 meth_means2$meth_means <- as.numeric(as.character((meth_means2$meth_means)))
 
+#Overall variance homogeneity test and ttest
+var.test(meth_means[1:3], meth_means[4:6])
+t.test(meth_means[1:3], meth_means[4:6], paired = FALSE, var.equal = TRUE)
 
 #boxplot of overall methylation frequency
-p <- ggplot(meth_means2, aes(x = V2, y = meth_means, fill = meth_means)) +
-  geom_boxplot(fill = c("#DE77AE", "#7FBC41")) +
-  geom_text(aes(fontface=3), x=1, y=0.06, label="p = 0.073") +
+p <- ggplot(meth_means2, aes(x = V2, y = meth_means, color = V2)) +
+  geom_boxplot(size =1) +
+  scale_color_manual(values=c("#DE77AE", "#7FBC41")) +
+  annotate("text", x=1, y=0.06, size = 4, label = "p = 0.057") +
   theme_bw() +
   labs(x="",y="Methylation frequency") +
   theme(legend.position = "none")  +
@@ -46,10 +53,6 @@ p <- ggplot(meth_means2, aes(x = V2, y = meth_means, fill = meth_means)) +
   theme(panel.border = element_rect(size = 1)) +
   theme(text = element_text(size = 20)) 
 
-
-#Overall variance homogeneity test and ttest
-var.test(meth_means[1:3], meth_means[4:6])
-t.test(meth_means[1:3], meth_means[4:6], paired = FALSE)
 
 #get only meth freq columns
 meth_cols <- mergedData2[,c(7,11,15,19,23,27)]

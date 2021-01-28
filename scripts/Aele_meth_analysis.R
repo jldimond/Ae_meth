@@ -3,6 +3,9 @@
 
 setwd("~/Documents/Projects/Anthopleura/Methylation-splicing/Ae_meth/analyses/")
 
+library(ggplot2)
+library(ggpubr)
+
 #open nanopore methylation data
 Aele_meth_freq <-read.delim("methylation_frequency_thresh10.tsv", sep = "\t", header=T)
 
@@ -65,6 +68,10 @@ abline(model, col = "green")
 
 CpGOE_0 <- as.numeric(All_data_thresh$CpG_OE[All_data_thresh[,2] == 0])
 CpGOE_1 <- as.numeric(All_data_thresh$CpG_OE[All_data_thresh[,2] == 1])
+
+var.test(CpGOE_0, CpGOE_1)
+t.test(CpGOE_0, CpGOE_1, paired = FALSE, var.equal = FALSE)
+
 CpGOE_0 <- cbind(CpGOE_0, rep("Fully unmethylated", length(CpGOE_0)))
 CpGOE_1 <- cbind(CpGOE_1, rep("Fully methylated", length(CpGOE_1)))
 
@@ -72,9 +79,10 @@ CpG_01 <- as.data.frame(rbind(CpGOE_1, CpGOE_0))
 CpG_01[,1] <- as.numeric(as.character(CpG_01[,1]))
 CpG_01$V2 = factor(CpG_01$V2,c("Fully unmethylated","Fully methylated"))
 
-#plotting
+var.test(meth_means[1:3], meth_means[4:6])
+t.test(meth_means[1:3], meth_means[4:6], paired = FALSE)
 
-library(ggplot2)
+#plotting
 
 # Scatter plot using ggplot and ggpubr, plus boxplot
 sp <- ggscatter(All_data_thresh, x = "methylated_frequency", y = "CpG_OE",
@@ -86,10 +94,11 @@ sp <- ggscatter(All_data_thresh, x = "methylated_frequency", y = "CpG_OE",
                 ylab = "CpG O/E", xlab = "Methylated frequency")+
   border()                                         
 #Violinplot of fully meth and umeth by CpG O/E
-viol <- ggplot(CpG_01, aes(x=V2, y=CpGOE_1),xlab = "", ylab = "CpG O/E", show.legend = FALSE) + 
-  geom_violin(aes(fill = V2)) +
-  scale_fill_manual(values=c("#b2abd2", "#542788")) +
+viol <- ggplot(CpG_01, aes(x=V2, y=CpGOE_1, color =V2),xlab = "", ylab = "CpG O/E", show.legend = FALSE) + 
+  geom_violin(size =1) +
+  scale_color_manual(values=c("#f1a340", "#998ec3")) +
   labs(x="", y = "CpG O/E")+
+  annotate(geom = "text", label = "italic(p) < 2.2e-16", x=1.5, y=1.5, size = 4, parse = TRUE) +
   theme_bw() +
   theme(legend.position = "none")  +
   theme(axis.text = element_text(size = 12, color = "black")) +
@@ -97,6 +106,7 @@ viol <- ggplot(CpG_01, aes(x=V2, y=CpGOE_1),xlab = "", ylab = "CpG O/E", show.le
   theme(axis.ticks = element_line(color = "black")) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   theme(panel.border = element_rect(size = 1)) 
+
 
 # Plot both
 library(cowplot)
