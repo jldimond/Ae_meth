@@ -1,0 +1,1 @@
+The data directory contains the draft A. elegantissima genome developed using only aposymbiotic sequences from several nanopore runs. Raw reads can be accessed at NCBI under [BioProject PRJNA700526](https://www.ncbi.nlm.nih.gov/sra/PRJNA700526). The genome file is ./wtdbg2_genome/Ae.ctg.lay.fa.gz.

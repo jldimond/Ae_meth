@@ -134,3 +134,15 @@ library(cowplot)
 plot_grid(p, pcaplot2, labels=c("A", "B"), ncol = 2, nrow = 1)
 
 
+#DAPC
+# library(adegenet)
+# rownames(meth_cols) <- paste(mergedData2$chrom,mergedData2$start, 
+#                              mergedData2$end)
+# 
+# test <- t(meth_cols)
+# gr <- as.factor(c("Apo", "Apo", "Apo", "Sym", "Sym", "Sym"))
+# dapc1 <- dapc(test, grp=gr)
+# scatter(dapc1)
+# compoplot(dapc1)
+# loadingplot(dapc1$var.contr, thres=6e-4)
+# loadings <- dapc1$var.contr
